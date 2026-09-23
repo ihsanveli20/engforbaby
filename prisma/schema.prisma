@@ -1,0 +1,79 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model DailyPlan {
+  id          String         @id @default(cuid())
+  ageGroupId  String         // '0-3', '3-6', '6-12', '12-24'
+  dayNumber   Int
+  title       String
+  subtitle    String
+  focus       String
+  principle   String?
+  affirmationAffEng String
+  affirmationAffTr  String
+  affirmationPhonetic String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  sections    PlanSection[]
+  flashcards  Flashcard[]
+  progress    PlanProgress[]
+
+  @@unique([ageGroupId, dayNumber])
+}
+
+model PlanSection {
+  id             String         @id @default(cuid())
+  dailyPlanId    String
+  dailyPlan      DailyPlan      @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  type           String         // 'vocabulary', 'dialogue', 'routine', 'grammar_tenses', 'emotions', 'affirmation', 'action_guide', 'review'
+  title          String
+  subtitle       String?
+  badge          String?
+  icon           String?
+  order          Int            @default(0)
+  howToApplyList String[]       @default([])
+  items          SentenceItem[]
+}
+
+model SentenceItem {
+  id              String      @id @default(cuid())
+  sectionId       String
+  section         PlanSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  english         String
+  turkish         String
+  phonetic        String
+  tenseTag        String?
+  dialogueSpeaker String?
+  howToApply      String?
+  icon            String?
+  order           Int         @default(0)
+}
+
+model Flashcard {
+  id           String    @id @default(cuid())
+  dailyPlanId  String
+  dailyPlan    DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  title        String
+  turkishTitle String
+  emoji        String
+  contrastType String    @default("colorful") // 'high-contrast' | 'colorful'
+  description  String?
+  audioPrompt  String?
+  order        Int       @default(0)
+}
+
+model PlanProgress {
+  id          String    @id @default(cuid())
+  dailyPlanId String
+  dailyPlan   DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  completedAt DateTime  @default(now())
+  userId      String    @default("default_user")
+
+  @@unique([dailyPlanId, userId])
+}
